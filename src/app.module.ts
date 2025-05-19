@@ -7,6 +7,8 @@ import { Movie } from './movie/entity/movie.entity';
 import { MovieDetail } from './movie/entity/movie-detail.entity';
 import { DirectorModule } from './director/director.module';
 import { Director } from './director/entity/director.entity';
+import { GenreModule } from './genre/genre.module';
+import { Genre } from './genre/entities/genre.entity';
 @Module({
   imports: [
     // env 파일의 타입 관리를 위한 Joi 사용
@@ -31,13 +33,14 @@ import { Director } from './director/entity/director.entity';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        entities: [Movie, MovieDetail, Director],
+        entities: [Movie, MovieDetail, Director, Genre],
         synchronize: true, // 자동으로 켜질때마다 db와 동기화
       }),
       inject: [ConfigService],
     }),
     MovieModule,
     DirectorModule,
+    GenreModule,
   ],
   controllers: [],
   providers: [],
