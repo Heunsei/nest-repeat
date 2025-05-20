@@ -9,6 +9,9 @@ import {
   Query,
   UseInterceptors,
   ClassSerializerInterceptor,
+  ParseIntPipe,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { MovieService } from './movie.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
@@ -25,8 +28,11 @@ export class MovieController {
   }
 
   @Get(':id')
-  getMovie(@Param('id') id: string) {
-    return this.movieService.findOne(+id);
+  getMovie(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
+    return this.movieService.findOne(id);
   }
 
   @Post()
