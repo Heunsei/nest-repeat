@@ -9,6 +9,9 @@ import { DirectorModule } from './director/director.module';
 import { Director } from './director/entity/director.entity';
 import { GenreModule } from './genre/genre.module';
 import { Genre } from './genre/entities/genre.entity';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
+import { User } from './user/entity/user.entity';
 @Module({
   imports: [
     // env 파일의 타입 관리를 위한 Joi 사용
@@ -22,6 +25,9 @@ import { Genre } from './genre/entities/genre.entity';
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_DATABASE: Joi.string().required(),
+        HASH_ROUNDS: Joi.number().required(),
+        ACCESS_TOKEN_SECRET: Joi.string().required(),
+        REFRESH_TOKEN_SECRET: Joi.string().required(),
       }),
     }),
     // config module가 생성후 값을 주입받아야해서 async로 실행
@@ -33,7 +39,7 @@ import { Genre } from './genre/entities/genre.entity';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        entities: [Movie, MovieDetail, Director, Genre],
+        entities: [Movie, MovieDetail, Director, Genre, User],
         synchronize: true, // 자동으로 켜질때마다 db와 동기화
       }),
       inject: [ConfigService],
@@ -41,6 +47,8 @@ import { Genre } from './genre/entities/genre.entity';
     MovieModule,
     DirectorModule,
     GenreModule,
+    AuthModule,
+    UserModule,
   ],
   controllers: [],
   providers: [],
