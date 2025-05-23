@@ -1,10 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/user/entity/user.entity';
+import { Role, User } from 'src/user/entity/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { envVariablesKeys } from 'src/common/const/env.const';
 @Injectable()
 export class AuthService {
   constructor(
@@ -14,15 +19,20 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  // Basic 토큰은 id:password 형태로 인코딩된 토큰을 받아
+  // 디코드 후 회원가입에 사용
   parseBasicToken(rawToken: string) {
     const splited = rawToken.split(' ');
 
     if (splited.length !== 2) {
-      throw new BadRequestException('잘못된 토큰입니다');
+      throw new BadRequestException('토큰 포맷이 잘못되었습니다');
     }
 
-    const [_, token] = splited;
+    const [basic, token] = splited;
 
+    if (basic.toLowerCase() !== 'basic') {
+      throw new BadRequestException('토큰 포맷이 잘못되었습니다');
+    }
     const decoded = Buffer.from(token, 'base64').toString('utf-8');
 
     const splitedToken = decoded.split(':');
@@ -35,11 +45,54 @@ export class AuthService {
     return { email, password };
   }
 
+  // 여기서 사용되는 토큰은 jwt 토큰.
+  async parseBearerToken(rawToken: string, isRefreshToken: boolean) {
+    const token = this.validateToken(rawToken);
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get<string>(
+          isRefreshToken
+            ? envVariablesKeys.refreshTokenSecret
+            : envVariablesKeys.accessTokenSecret,
+        ),
+      });
+
+      if (isRefreshToken) {
+        if (payload.type !== 'refresh') {
+          throw new BadRequestException('refresh 토큰을 입력해주세요');
+        }
+      } else {
+        if (payload.type !== 'accessToken') {
+          throw new BadRequestException('access 토큰을 입력해주세요');
+        }
+      }
+      return payload;
+    } catch (e) {
+      throw new UnauthorizedException('토큰이 만료되었습니다');
+    }
+  }
+
+  validateToken(rawToken: string) {
+    const bearerSplit = rawToken.split(' ');
+
+    if (bearerSplit.length !== 2) {
+      throw new BadRequestException('토큰의 포맷이 잘못되었습니다');
+    }
+
+    const [bearer, token] = bearerSplit;
+
+    if (bearer.toLowerCase() !== 'bearer') {
+      throw new BadRequestException('토큰의 포맷이 잘못되었습니다');
+    }
+
+    return token;
+  }
+
   async authenticate(email: string, password: string) {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
-      throw new BadRequestException('잘못된 로그인 정보입니다');
+      throw new BadRequestException('여기서 걸리니?');
     }
     const passOk = await bcrypt.compare(password, user.password);
     if (!passOk) {
@@ -62,7 +115,7 @@ export class AuthService {
 
     const hash = await bcrypt.hash(
       password,
-      this.configService.get<number>('HASH_ROUNDS') as number,
+      this.configService.get<number>(envVariablesKeys.hashRounds) as number,
     );
 
     await this.userRepository.save({
@@ -74,42 +127,35 @@ export class AuthService {
     });
   }
 
+  async issueToken(user: { id: number; role: Role }, isRefreshToken: boolean) {
+    const refreshTokenSecret = this.configService.get<string>(
+      envVariablesKeys.refreshTokenSecret,
+    );
+
+    const accessTokenSecret = this.configService.get<string>(
+      envVariablesKeys.accessTokenSecret,
+    );
+    return await this.jwtService.signAsync(
+      {
+        sub: user.id,
+        role: user.role,
+        type: isRefreshToken ? 'refresh' : 'access',
+      },
+      {
+        secret: isRefreshToken ? refreshTokenSecret : accessTokenSecret,
+        expiresIn: isRefreshToken ? '24h' : 300,
+      },
+    );
+  }
+
   async login(rawToken: string) {
     const { email, password } = this.parseBasicToken(rawToken);
 
     const user = await this.authenticate(email, password);
 
-    const refreshTokenSecret = this.configService.get<string>(
-      'REFRESH_TOKEN_SECRET',
-    );
-
-    const accessTokenSecret = this.configService.get<string>(
-      'ACCESS_TOKEN_SECRET',
-    );
-
     return {
-      refreshToken: await this.jwtService.signAsync(
-        {
-          sub: user.id,
-          role: user.role,
-          type: 'refresh',
-        },
-        {
-          secret: refreshTokenSecret,
-          expiresIn: '24h',
-        },
-      ),
-      accessToken: await this.jwtService.signAsync(
-        {
-          sub: user.id,
-          role: user.role,
-          type: 'access',
-        },
-        {
-          secret: accessTokenSecret,
-          expiresIn: 300,
-        },
-      ),
+      refreshToken: await this.issueToken(user, true),
+      accessToken: await this.issueToken(user, false),
     };
   }
 }
