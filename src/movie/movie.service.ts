@@ -3,7 +3,7 @@ import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
 import { Movie } from './entity/movie.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, In, QueryRunner, Repository } from 'typeorm';
 import { MovieDetail } from './entity/movie-detail.entity';
 import { Director } from 'src/director/entity/director.entity';
 import { Genre } from 'src/genre/entities/genre.entity';
@@ -26,30 +26,24 @@ export class MovieService {
   ) {}
 
   async findAll(dto: GetMoviesDto) {
-    const { title, take, page } = dto;
+    const { title } = dto;
     const qb = this.movieRepository
       .createQueryBuilder('movie')
       .leftJoinAndSelect('movie.director', 'director')
       .leftJoinAndSelect('movie.genres', 'genres');
+
     if (title) {
       qb.where('movie.title LIKE :title', { title: `%${title}%` });
     }
-    if (take && page) {
-      this.commonService.applyPagePaginationParamsToQb(qb, dto);
-    }
-    return await qb.getManyAndCount();
-    // if (!title) {
-    //   return [
-    //     await this.movieRepository.find({
-    //       relations: ['director'],
-    //     }),
-    //     await this.movieRepository.count(),
-    //   ];
-    // }
-    // return await this.movieRepository.findAndCount({
-    //   where: { title: Like(`%${title}%`) },
-    //   relations: ['director'],
-    // });
+
+    const { nextCursor } =
+      await this.commonService.applyCursorPaginationParamsToQb(qb, dto);
+    const [data, count] = await qb.getManyAndCount();
+    return {
+      data,
+      nextCursor,
+      count,
+    };
   }
 
   async findOne(id: number) {
@@ -72,82 +66,68 @@ export class MovieService {
     return movie;
   }
 
-  async create(createMovieDto: CreateMovieDto) {
-    const qr = this.dataSource.createQueryRunner();
-
-    await qr.connect();
-    await qr.startTransaction();
-
-    try {
-      const director = await qr.manager.findOne(Director, {
-        where: { id: createMovieDto.directorId },
-      });
-
-      if (!director) {
-        throw new NotFoundException('존재하지 않는 id의 감독입니다');
-      }
-
-      const genres = await qr.manager.find(Genre, {
-        where: { id: In(createMovieDto.genreIds) },
-      });
-
-      if (genres.length !== createMovieDto.genreIds.length) {
-        throw new NotFoundException(
-          `해당 장르는 존재하지 않습니다, 존재하지 않는 id => ${genres.map((genre) => genre.id).join(',')}`,
-        );
-      }
-
-      const movieDetail = await qr.manager
-        .createQueryBuilder()
-        .insert()
-        .into(MovieDetail)
-        .values({
-          detail: createMovieDto.detail,
-        })
-        .execute();
-
-      const movieDetailId = movieDetail.identifiers[0].id;
-
-      const movie = await qr.manager
-        .createQueryBuilder()
-        .insert()
-        .into(Movie)
-        .values({
-          title: createMovieDto.title,
-          detail: { id: movieDetailId },
-          director,
-        })
-        .execute();
-
-      const movieId = movie.identifiers[0].id;
-      // n:m 관계 넣어주는 과정
-      await qr.manager
-        .createQueryBuilder()
-        .relation(Movie, 'genres')
-        .of(movieId) // movieid에 해당하는 값을 조작
-        .add(genres.map((genre) => genre.id)); // 관계를 추가할거다 movieId에 해당하도록
-
-      // 쿼리빌더에서는 한번에 만드는게 불편해서 저장은 repo 패턴쓰는게 편함
-      // cascade 불가. onetoone, many t oone은 가능
-      // const movie = await this.movieRepository.save({
-      //   title: createMovieDto.title,
-      //   detail: { detail: createMovieDto.detail },
-      //   genres,
-      //   director,
-      // });
-      // return movie;
-
-      await qr.commitTransaction();
-      return await this.movieRepository.find({
-        where: { id: movieId },
-        relations: ['detail', 'genres', 'director'],
-      });
-    } catch (e) {
-      await qr.rollbackTransaction();
-      throw e;
-    } finally {
-      await qr.release();
+  async create(createMovieDto: CreateMovieDto, qr: QueryRunner) {
+    const director = await qr.manager.findOne(Director, {
+      where: { id: createMovieDto.directorId },
+    });
+    if (!director) {
+      throw new NotFoundException('존재하지 않는 id의 감독입니다');
     }
+
+    const genres = await qr.manager.find(Genre, {
+      where: { id: In(createMovieDto.genreIds) },
+    });
+
+    if (genres.length !== createMovieDto.genreIds.length) {
+      throw new NotFoundException(
+        `해당 장르는 존재하지 않습니다, 존재하지 않는 id => ${genres.map((genre) => genre.id).join(',')}`,
+      );
+    }
+
+    const movieDetail = await qr.manager
+      .createQueryBuilder()
+      .insert()
+      .into(MovieDetail)
+      .values({
+        detail: createMovieDto.detail,
+      })
+      .execute();
+
+    const movieDetailId = movieDetail.identifiers[0].id;
+
+    const movie = await qr.manager
+      .createQueryBuilder()
+      .insert()
+      .into(Movie)
+      .values({
+        title: createMovieDto.title,
+        detail: { id: movieDetailId },
+        director,
+      })
+      .execute();
+
+    const movieId = movie.identifiers[0].id;
+    // n:m 관계 넣어주는 과정
+    await qr.manager
+      .createQueryBuilder()
+      .relation(Movie, 'genres')
+      .of(movieId) // movieid에 해당하는 값을 조작
+      .add(genres.map((genre) => genre.id)); // 관계를 추가할거다 movieId에 해당하도록
+
+    // 쿼리빌더에서는 한번에 만드는게 불편해서 저장은 repo 패턴쓰는게 편함
+    // cascade 불가. onetoone, many to one은 가능
+    // const movie = await this.movieRepository.save({
+    //   title: createMovieDto.title,
+    //   detail: { detail: createMovieDto.detail },
+    //   genres,
+    //   director,
+    // });
+    // return movie;
+
+    return await qr.manager.findOne(Movie, {
+      where: { id: movieId },
+      relations: ['detail', 'genres', 'director'],
+    });
   }
 
   async update(id: number, updateMovieDto: UpdateMovieDto) {

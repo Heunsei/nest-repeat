@@ -15,9 +15,8 @@ export class AuthGuard implements CanActivate {
     // 요청에서 user 객체가 존재하는지 확인
     // 존재한다면 인증이 통과를 했다는 의미로 받아들일 수 있음.
     const request = context.switchToHttp().getRequest();
-    // console.log(request.user);
     if (!request.user || request.user.type !== 'access') {
-      // console.log('여기서 끊기나요?');
+      console.log('여기서 끊기나요?');
       return false;
     }
     return true;
