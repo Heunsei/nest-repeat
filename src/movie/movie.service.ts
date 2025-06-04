@@ -9,6 +9,8 @@ import { Director } from 'src/director/entity/director.entity';
 import { Genre } from 'src/genre/entities/genre.entity';
 import { GetMoviesDto } from './dto/get-movies.dto';
 import { CommonService } from 'src/common/common.service';
+import { join } from 'path';
+import { rename } from 'fs/promises';
 
 @Injectable()
 export class MovieService {
@@ -52,6 +54,7 @@ export class MovieService {
       .leftJoinAndSelect('movie.director', 'director')
       .leftJoinAndSelect('movie.genres', 'genres')
       .leftJoinAndSelect('movie.detail', 'detail')
+      .leftJoinAndSelect('movie.creator', 'creator')
       .where('movie.id = :id', { id })
       .getOne();
     // const movie = await this.movieRepository.findOne({
@@ -66,7 +69,11 @@ export class MovieService {
     return movie;
   }
 
-  async create(createMovieDto: CreateMovieDto, qr: QueryRunner) {
+  async create(
+    createMovieDto: CreateMovieDto,
+    userId: number,
+    qr: QueryRunner,
+  ) {
     const director = await qr.manager.findOne(Director, {
       where: { id: createMovieDto.directorId },
     });
@@ -95,6 +102,9 @@ export class MovieService {
 
     const movieDetailId = movieDetail.identifiers[0].id;
 
+    const movieFolder = join('public', 'movie');
+    const tempFolder = join('public', 'temp');
+
     const movie = await qr.manager
       .createQueryBuilder()
       .insert()
@@ -103,6 +113,10 @@ export class MovieService {
         title: createMovieDto.title,
         detail: { id: movieDetailId },
         director,
+        creator: {
+          id: userId,
+        },
+        movieFilePath: join(movieFolder, createMovieDto.movieFileName),
       })
       .execute();
 
@@ -114,15 +128,10 @@ export class MovieService {
       .of(movieId) // movieid에 해당하는 값을 조작
       .add(genres.map((genre) => genre.id)); // 관계를 추가할거다 movieId에 해당하도록
 
-    // 쿼리빌더에서는 한번에 만드는게 불편해서 저장은 repo 패턴쓰는게 편함
-    // cascade 불가. onetoone, many to one은 가능
-    // const movie = await this.movieRepository.save({
-    //   title: createMovieDto.title,
-    //   detail: { detail: createMovieDto.detail },
-    //   genres,
-    //   director,
-    // });
-    // return movie;
+    await rename(
+      join(process.cwd(), tempFolder, createMovieDto.movieFileName),
+      join(process.cwd(), movieFolder, createMovieDto.movieFileName),
+    );
 
     return await qr.manager.findOne(Movie, {
       where: { id: movieId },

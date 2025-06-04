@@ -10,17 +10,18 @@ import { CommonModule } from 'src/common/common.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { join } from 'path';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Movie, MovieDetail, Director, Genre]),
     CommonModule,
-    MulterModule.register({
-      // 서버의 파일 시스템에 저장
-      storage: diskStorage({
-        // 서버를 실행한 위치가 기준. 프로젝트 안의 Root 경로를 사용
-        destination: join(process.cwd(), 'public', 'movie'),
-      }),
-    }),
+    // MulterModule.register({
+    //   // 서버의 파일 시스템에 저장
+    //   storage: diskStorage({
+    //     // 서버를 실행한 위치가 기준. 프로젝트 안의 Root 경로를 사용
+    //     destination: join(process.cwd(), 'public', 'movie'),
+    //   }),
+    // }),
   ],
   controllers: [MovieController],
   providers: [MovieService],

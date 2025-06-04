@@ -25,6 +25,8 @@ import { RBACGuard } from './auth/guard/rbac.guard';
 import { ResponseTimeInterceptor } from './common/interceptor/response-time.interceptor';
 import { ForbiddenExceptionFilter } from './common/filter/forbidden.filter';
 import { QueryFailedExecptionFilter } from './common/filter/query-failed.filter';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 @Module({
   imports: [
     // env 파일의 타입 관리를 위한 Joi 사용
@@ -56,6 +58,10 @@ import { QueryFailedExecptionFilter } from './common/filter/query-failed.filter'
         synchronize: true, // 자동으로 켜질때마다 db와 동기화
       }),
       inject: [ConfigService],
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'public'),
+      serveRoot: '/public/',
     }),
     MovieModule,
     DirectorModule,
