@@ -23,6 +23,8 @@ import { TransactionInterceptor } from 'src/common/interceptor/transaction.inter
 import { UserId } from 'src/user/decorator/user-id.decorator';
 import { QueryRunner } from 'src/common/decorator/query-runner.decorator';
 import { QueryRunner as QR } from 'typeorm';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+
 @Controller('movie')
 @UseInterceptors(ClassSerializerInterceptor)
 export class MovieController {
@@ -30,8 +32,16 @@ export class MovieController {
 
   @Get()
   @Public()
-  getMovies(@Query() dto: GetMoviesDto) {
-    return this.movieService.findAll(dto);
+  getMovies(@Query() dto: GetMoviesDto, @UserId() userId?: number) {
+    return this.movieService.findAll(dto, userId);
+  }
+
+  @Get('recent')
+  @UseInterceptors(CacheInterceptor)
+  @CacheKey('TEST')
+  @CacheTTL(1000)
+  getMoviesRecent() {
+    return this.movieService.findRecent();
   }
 
   @Get(':id')
@@ -67,5 +77,21 @@ export class MovieController {
   @RBAC(Role.admin)
   deleteMovie(@Param('id', ParseIntPipe) id: number) {
     return this.movieService.remove(id);
+  }
+
+  @Post(':id/like')
+  createMovieLike(
+    @Param('id', ParseIntPipe) movieId: number,
+    @UserId() userId: number,
+  ) {
+    return this.movieService.toggleMovieLike(movieId, userId, true);
+  }
+
+  @Post(':id/dislike')
+  createMovieDislike(
+    @Param('id', ParseIntPipe) movieId: number,
+    @UserId() userId: number,
+  ) {
+    return this.movieService.toggleMovieLike(movieId, userId, false);
   }
 }

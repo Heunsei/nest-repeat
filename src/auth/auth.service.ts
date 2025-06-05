@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -10,6 +11,8 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { envVariablesKeys } from 'src/common/const/env.const';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 @Injectable()
 export class AuthService {
   constructor(
@@ -17,6 +20,8 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheService: Cache,
   ) {}
 
   // Basic 토큰은 id:password 형태로 인코딩된 토큰을 받아
@@ -49,6 +54,7 @@ export class AuthService {
   async parseBearerToken(rawToken: string, isRefreshToken: boolean) {
     const token = this.validateToken(rawToken);
     try {
+      // 토큰이 유효한지 확인하는 과정
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get<string>(
           isRefreshToken
@@ -127,6 +133,8 @@ export class AuthService {
     });
   }
 
+  // 토큰을 만들어서 발급해주는 로직.
+  // accessToken은 5분만 유지 refreshToken은 24시간 유지.
   async issueToken(user: { id: number; role: Role }, isRefreshToken: boolean) {
     const refreshTokenSecret = this.configService.get<string>(
       envVariablesKeys.refreshTokenSecret,
@@ -157,5 +165,22 @@ export class AuthService {
       refreshToken: await this.issueToken(user, true),
       accessToken: await this.issueToken(user, false),
     };
+  }
+
+  async tokenBlock(token: string) {
+    const payload = this.jwtService.decode(token);
+
+    const expiryDate = +new Date(payload['exp'] * 1000);
+    const now = +Date.now();
+
+    const diffInSeconds = (expiryDate - now) / 1000;
+
+    await this.cacheService.set(
+      `BLOCK_TOKEN_${token}`,
+      payload,
+      Math.max(diffInSeconds * 1000, 1),
+    );
+
+    return true;
   }
 }

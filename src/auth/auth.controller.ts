@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
+  Body,
   Controller,
   Get,
   Headers,
@@ -27,6 +28,11 @@ export class AuthController {
   @Post('login')
   loginUser(@Headers('authorization') token: string) {
     return this.authService.login(token);
+  }
+
+  @Post('token/block')
+  blockToken(@Body('token') token: string) {
+    return this.authService.tokenBlock(token);
   }
 
   @UseGuards(LocalAuthGuard)

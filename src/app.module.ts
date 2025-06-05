@@ -27,6 +27,8 @@ import { ForbiddenExceptionFilter } from './common/filter/forbidden.filter';
 import { QueryFailedExecptionFilter } from './common/filter/query-failed.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { MovieUserLike } from './movie/entity/movie-user-like.entity';
+import { CacheModule } from '@nestjs/cache-manager';
 @Module({
   imports: [
     // env 파일의 타입 관리를 위한 Joi 사용
@@ -54,7 +56,7 @@ import { join } from 'path';
         username: configService.get<string>(envVariablesKeys.dbUsername),
         password: configService.get<string>(envVariablesKeys.dbPassword),
         database: configService.get<string>(envVariablesKeys.dbDatabase),
-        entities: [Movie, MovieDetail, Director, Genre, User],
+        entities: [Movie, MovieDetail, Director, Genre, User, MovieUserLike],
         synchronize: true, // 자동으로 켜질때마다 db와 동기화
       }),
       inject: [ConfigService],
@@ -62,6 +64,10 @@ import { join } from 'path';
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'public'),
       serveRoot: '/public/',
+    }),
+    CacheModule.register({
+      ttl: 3000,
+      isGlobal: true,
     }),
     MovieModule,
     DirectorModule,
