@@ -29,6 +29,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { MovieUserLike } from './movie/entity/movie-user-like.entity';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ThrottleInterceptor } from './common/interceptor/throttle.interceptor';
+import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports: [
     // env 파일의 타입 관리를 위한 Joi 사용
@@ -69,6 +71,7 @@ import { CacheModule } from '@nestjs/cache-manager';
       ttl: 3000,
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     MovieModule,
     DirectorModule,
     GenreModule,
@@ -89,13 +92,17 @@ import { CacheModule } from '@nestjs/cache-manager';
       provide: APP_INTERCEPTOR,
       useClass: ResponseTimeInterceptor,
     },
-    {
-      provide: APP_FILTER,
-      useClass: ForbiddenExceptionFilter,
-    },
+    // {
+    //   provide: APP_FILTER,
+    //   useClass: ForbiddenExceptionFilter,
+    // },
     {
       provide: APP_FILTER,
       useClass: QueryFailedExecptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ThrottleInterceptor,
     },
   ],
 })

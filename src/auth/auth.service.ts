@@ -98,9 +98,11 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
-      throw new BadRequestException('여기서 걸리니?');
+      throw new BadRequestException('존재하지 않는 유저입니다.');
     }
+
     const passOk = await bcrypt.compare(password, user.password);
+
     if (!passOk) {
       throw new BadRequestException('잘못된 로그인 정보입니다');
     }
