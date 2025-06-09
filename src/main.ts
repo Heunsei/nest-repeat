@@ -1,10 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+  // app.setGlobalPrefix('v1');
+  app.enableVersioning({
+    type: VersioningType.URI,
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: false, // 기본 false, true설정 시 dto에 설정하지 않은 값들은 걸러줌
