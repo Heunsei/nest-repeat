@@ -1,18 +1,14 @@
 import { Module } from '@nestjs/common';
 import { MovieService } from './movie.service';
-import { MovieController, MovieController2 } from './movie.controller';
+import { MovieController } from './movie.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Movie } from './entity/movie.entity';
 import { MovieDetail } from './entity/movie-detail.entity';
 import { Director } from 'src/director/entity/director.entity';
 import { Genre } from 'src/genre/entities/genre.entity';
 import { CommonModule } from 'src/common/common.module';
-import { MulterModule } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { join } from 'path';
 import { User } from 'src/user/entity/user.entity';
 import { MovieUserLike } from './entity/movie-user-like.entity';
-import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -26,7 +22,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     ]),
     CommonModule,
   ],
-  controllers: [MovieController, MovieController2],
+  controllers: [MovieController],
   providers: [MovieService],
 })
 export class MovieModule {}

@@ -74,36 +74,36 @@ import * as winston from 'winston';
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
-    WinstonModule.forRoot({
-      // 로그를 작성했을 때 어디로 전달될 지 정하는 요소.
-      // 로그는 콘솔에도 띄울 수 있고, 로그를 쌓아서 모니터링 할 수 도 있어야한다
-      level: 'debug', // debug 이상으로 로그를 보겠다
-      transports: [
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.colorize({
-              all: true,
-            }),
-            winston.format.timestamp(),
-            winston.format.printf(
-              (info) =>
-                `[${info.timestamp}] - [${info.context}] [${info.level}] - ${info.message}`,
-            ),
-          ),
-        }),
-        new winston.transports.File({
-          dirname: join(process.cwd(), 'logs'),
-          filename: 'logs.log',
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.printf(
-              (info) =>
-                `[${info.timestamp}] - [${info.context}] [${info.level}] - ${info.message}`,
-            ),
-          ),
-        }),
-      ],
-    }),
+    // WinstonModule.forRoot({
+    //   // 로그를 작성했을 때 어디로 전달될 지 정하는 요소.
+    //   // 로그는 콘솔에도 띄울 수 있고, 로그를 쌓아서 모니터링 할 수 도 있어야한다
+    //   level: 'debug', // debug 이상으로 로그를 보겠다
+    //   transports: [
+    //     new winston.transports.Console({
+    //       format: winston.format.combine(
+    //         winston.format.colorize({
+    //           all: true,
+    //         }),
+    //         winston.format.timestamp(),
+    //         winston.format.printf(
+    //           (info) =>
+    //             `[${info.timestamp}] - [${info.context}] [${info.level}] - ${info.message}`,
+    //         ),
+    //       ),
+    //     }),
+    //     new winston.transports.File({
+    //       dirname: join(process.cwd(), 'logs'),
+    //       filename: 'logs.log',
+    //       format: winston.format.combine(
+    //         winston.format.timestamp(),
+    //         winston.format.printf(
+    //           (info) =>
+    //             `[${info.timestamp}] - [${info.context}] [${info.level}] - ${info.message}`,
+    //         ),
+    //       ),
+    //     }),
+    //   ],
+    // }),
     MovieModule,
     DirectorModule,
     GenreModule,

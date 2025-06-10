@@ -25,22 +25,16 @@ import { QueryRunner } from 'src/common/decorator/query-runner.decorator';
 import { QueryRunner as QR } from 'typeorm';
 import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { Throttle } from 'src/common/decorator/throttle.decorator';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
-@Controller({
-  path: 'movie',
-  version: '2',
-})
-export class MovieController2 {
-  @Get()
-  getMovies() {
-    return [];
-  }
-}
-
-@Controller({
-  path: 'movie',
-  version: '1',
-})
+@Controller('movie')
+@ApiBearerAuth()
+@ApiTags('movie')
 @UseInterceptors(ClassSerializerInterceptor)
 export class MovieController {
   constructor(private readonly movieService: MovieService) {}
@@ -50,6 +44,13 @@ export class MovieController {
   @Throttle({
     count: 5,
     unit: 'minute',
+  })
+  @ApiOperation({
+    description: '[movie]를 페이지네이션 하는 api',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '성공적으로 api를 실행했을 때',
   })
   getMovies(@Query() dto: GetMoviesDto, @UserId() userId?: number) {
     return this.movieService.findAll(dto, userId);

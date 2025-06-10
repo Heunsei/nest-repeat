@@ -1,15 +1,30 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
-  // app.setGlobalPrefix('v1');
-  app.enableVersioning({
-    type: VersioningType.URI,
+  // app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+
+  // 빌더 생성
+  const config = new DocumentBuilder()
+    .setTitle('document')
+    .setDescription('nest 관련 swagger 테스트')
+    .setVersion('1.0')
+    .addBasicAuth()
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  // documentation의 prefix
+  SwaggerModule.setup('doc', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
   });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: false, // 기본 false, true설정 시 dto에 설정하지 않은 값들은 걸러줌

@@ -17,15 +17,15 @@ export class TasksService {
     private readonly movieRepository: Repository<Movie>,
     private readonly schedulerRegistry: SchedulerRegistry,
     // private readonly logger: DefaultLogger,
-    @Inject(WINSTON_MODULE_NEST_PROVIDER)
-    private readonly logger: LoggerService,
+    // @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    // private readonly logger: LoggerService,
   ) {}
 
   // @Cron('* * * * * *')
-  logEverySecond() {
-    this.logger.log('1초마다 실행', TasksService.name);
-    this.logger.error('test', null, TasksService.name);
-  }
+  // logEverySecond() {
+  //   this.logger.log('1초마다 실행', TasksService.name);
+  //   this.logger.error('test', null, TasksService.name);
+  // }
 
   // @Cron('*/5 * * * * *')
   async eraseOrphanFiles() {
