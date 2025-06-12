@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { envVariablesKeys } from 'src/common/const/env.const';
+
 @Injectable()
 export class UserService {
   constructor(
@@ -19,8 +20,10 @@ export class UserService {
     private readonly configService: ConfigService,
   ) {}
   async create(createUserDto: CreateUserDto) {
+    const { email, password } = createUserDto;
+
     const user = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
+      where: { email },
     });
 
     if (user) {
@@ -28,17 +31,17 @@ export class UserService {
     }
 
     const hash = await bcrypt.hash(
-      createUserDto.password,
+      password,
       this.configService.get<number>(envVariablesKeys.hashRounds) as number,
     );
 
     await this.userRepository.save({
-      email: createUserDto.email,
+      email,
       password: hash,
     });
 
     return this.userRepository.findOne({
-      where: { email: createUserDto.email },
+      where: { email },
     });
   }
 
@@ -55,11 +58,24 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
+    const { password } = updateUserDto;
+
     const user = await this.userRepository.findOne({ where: { id } });
+
     if (!user) {
       throw new NotFoundException('해당아이디의 유저는 존재하지 않습니다');
     }
-    await this.userRepository.update({ id }, { ...updateUserDto });
+
+    const hash = await bcrypt.hash(
+      password as string,
+      this.configService.get<number>(envVariablesKeys.hashRounds) as number,
+    );
+
+    await this.userRepository.update(
+      { id },
+      { ...updateUserDto, password: hash },
+    );
+
     return await this.userRepository.findOne({ where: { id } });
   }
 
