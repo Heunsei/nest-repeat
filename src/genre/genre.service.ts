@@ -32,6 +32,10 @@ export class GenreService {
   }
 
   async findOne(id: number) {
+    const genre = await this.genreRepository.findOne({ where: { id } });
+    if (!genre) {
+      throw new NotFoundException('해당 id의 장르는 존재하지 않습니다');
+    }
     return await this.genreRepository.findOne({ where: { id } });
   }
 
@@ -47,7 +51,13 @@ export class GenreService {
     return newGenre;
   }
 
-  remove(id: number) {
-    return this.genreRepository.delete(id);
+  async remove(id: number) {
+    const genre = await this.genreRepository.findOne({ where: { id } });
+
+    if (!genre) {
+      throw new NotFoundException('존재하지 않는 장르입니다');
+    }
+    await this.genreRepository.delete(id);
+    return id;
   }
 }

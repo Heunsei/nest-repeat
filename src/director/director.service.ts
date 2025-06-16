@@ -16,7 +16,7 @@ export class DirectorService {
     return this.directorRepository.save(createDirectorDto);
   }
 
-  findAll() {
+  async findAll() {
     return this.directorRepository.find();
   }
 
@@ -37,16 +37,25 @@ export class DirectorService {
     if (!director) {
       throw new NotFoundException('해당 id의 감독은 존재하지 않습니다');
     }
-    const newDirector = await this.directorRepository.update(
+    await this.directorRepository.update(
       {
         id,
       },
       { ...updateDirectorDto },
     );
-    return newDirector;
+
+    const updatedDirector = await this.directorRepository.find({
+      where: { id },
+    });
+    return updatedDirector;
   }
 
   async remove(id: number) {
-    return await this.directorRepository.delete(id);
+    const deleteUser = await this.directorRepository.findOne({ where: { id } });
+    if (!deleteUser) {
+      throw new NotFoundException('해당 유저는 존재하지 않습니다.');
+    }
+    await this.directorRepository.delete(id);
+    return id;
   }
 }
