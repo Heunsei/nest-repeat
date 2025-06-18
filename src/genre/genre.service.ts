@@ -44,10 +44,13 @@ export class GenreService {
     if (!genre) {
       throw new NotFoundException('해당 id의 장르는 존재하지 않습니다');
     }
-    const newGenre = await this.genreRepository.update(
+    await this.genreRepository.update(
       { id },
-      { ...updateGenreDto },
+      {
+        ...updateGenreDto,
+      },
     );
+    const newGenre = this.genreRepository.findOne({ where: { id } });
     return newGenre;
   }
 

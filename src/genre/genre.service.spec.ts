@@ -111,7 +111,9 @@ describe('GenreService', () => {
         .spyOn(mockGenreRepository, 'findOne')
         .mockResolvedValue(existingGenre);
       jest.spyOn(mockGenreRepository, 'update').mockResolvedValue(updatedGenre);
-
+      jest
+        .spyOn(mockGenreRepository, 'findOne')
+        .mockResolvedValue(updatedGenre);
       const res = await service.update(1, updateGenreDto);
 
       expect(res).toEqual(updatedGenre);

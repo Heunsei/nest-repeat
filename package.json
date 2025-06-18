@@ -16,16 +16,19 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "test:cov:watch" : "jest --coverage --watchAll",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:user": "jest --testPathPattern=src/user --coverage --collectCoverageFrom=src/user/**",
     "test:user:watch": "jest --watch --testPathPattern=src/user --coverage --collectCoverageFrom=src/user/**",
-    "test:auth" : "jest --testPathPattern=src/auth --coverage --collectCoverageFrom=src/auth/**",
+    "test:auth": "jest --testPathPattern=src/auth --coverage --collectCoverageFrom=src/auth/**",
     "test:auth:watch": "jest --watch --testPathPattern=src/auth --coverage --collectCoverageFrom=src/auth/**",
-    "test:director" : "jest --testPathPattern=src/director --coverage --collectCoverageFrom=src/director/**",
+    "test:director": "jest --testPathPattern=src/director --coverage --collectCoverageFrom=src/director/**",
     "test:director:watch": "jest --watch --testPathPattern=src/director --coverage --collectCoverageFrom=src/director/**",
-    "test:genre" : "jest --testPathPattern=src/genre --coverage --collectCoverageFrom=src/genre/**",
-    "test:genre:watch": "jest --watch --testPathPattern=src/genre --coverage --collectCoverageFrom=src/genre/**"
+    "test:genre": "jest --testPathPattern=src/genre --coverage --collectCoverageFrom=src/genre/**",
+    "test:genre:watch": "jest --watch --testPathPattern=src/genre --coverage --collectCoverageFrom=src/genre/**",
+    "test:movie": "jest --testPathPattern=src/movie --coverage --collectCoverageFrom=src/movie/**",
+    "test:movie:watch": "jest --watch --testPathPattern=src/movie --coverage --collectCoverageFrom=src/movie/**"
   },
   "dependencies": {
     "@nestjs/cache-manager": "^3.0.1",
@@ -59,6 +62,8 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "@automock/adapters.nestjs": "^2.1.0",
+    "@automock/jest": "^2.1.0",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
@@ -104,16 +109,19 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
-    "coveragePathIgnorePatterns" : [
+    "coveragePathIgnorePatterns": [
       "module.ts",
       "dto.ts",
       "entity.ts",
-      "decorator.ts"
+      "decorator.ts",
+      "pipe.ts",
+      "common/*",
+      "guard.ts"
     ],
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
-    "moduleNameMapper" : {
-      "src/(.*)" : "<rootDir>/src/$1"
+    "moduleNameMapper": {
+      "src/(.*)": "<rootDir>/src/$1"
     }
   }
 }
