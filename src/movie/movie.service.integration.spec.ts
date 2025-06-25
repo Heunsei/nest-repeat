@@ -1,9 +1,4 @@
-import {
-  Cache,
-  CACHE_MANAGER,
-  CacheManagerOptions,
-  CacheModule,
-} from '@nestjs/cache-manager';
+import { Cache, CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
 import { TestingModule, Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Movie } from './entity/movie.entity';
@@ -14,13 +9,11 @@ import { MovieUserLike } from './entity/movie-user-like.entity';
 import { MovieService } from './movie.service';
 import { CommonService } from 'src/common/common.service';
 import { DataSource } from 'typeorm';
-import { before } from 'node:test';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
-import { NotFoundError } from 'rxjs';
 import { NotFoundException } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { Genre } from 'src/genre/entities/genre.entity';
+import { Genre } from 'src/genre/entity/genre.entity';
 
 describe('MovieService - Integration Test', () => {
   let service: MovieService;

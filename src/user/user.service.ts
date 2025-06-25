@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { envVariablesKeys } from 'src/common/const/env.const';
+import { PrismaService } from 'src/common/prisma.service';
 
 @Injectable()
 export class UserService {
@@ -18,6 +19,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
   ) {}
   async create(createUserDto: CreateUserDto) {
     const { email, password } = createUserDto;

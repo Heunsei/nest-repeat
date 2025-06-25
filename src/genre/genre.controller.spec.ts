@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GenreController } from './genre.controller';
 import { GenreService } from './genre.service';
 import { CreateGenreDto } from './dto/create-genre.dto';
-import { Genre } from './entities/genre.entity';
+import { Genre } from './entity/genre.entity';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 
 const mockGenreService = {

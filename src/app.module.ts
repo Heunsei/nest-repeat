@@ -6,14 +6,14 @@ import {
 } from '@nestjs/common';
 import { MovieModule } from './movie/movie.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConditionalModule, ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { Movie } from './movie/entity/movie.entity';
 import { MovieDetail } from './movie/entity/movie-detail.entity';
 import { DirectorModule } from './director/director.module';
 import { Director } from './director/entity/director.entity';
 import { GenreModule } from './genre/genre.module';
-import { Genre } from './genre/entities/genre.entity';
+import { Genre } from './genre/entity/genre.entity';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { User } from './user/entity/user.entity';
@@ -30,8 +30,10 @@ import { MovieUserLike } from './movie/entity/movie-user-like.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottleInterceptor } from './common/interceptor/throttle.interceptor';
 import { ScheduleModule } from '@nestjs/schedule';
-import { WinstonModule } from 'nest-winston';
-import * as winston from 'winston';
+import { ChatModule } from './chat/chat.module';
+import { Chat } from './chat/entity/chat.entity';
+import { ChatRoom } from './chat/entity/char-room.entity';
+import { WorkerModule } from './worker/worker.module';
 
 @Module({
   imports: [
@@ -47,6 +49,11 @@ import * as winston from 'winston';
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_DATABASE: Joi.string().required(),
+        DB_URL: Joi.string().required(),
+        RD_HOST: Joi.string().required(),
+        RD_USERNAME: Joi.string().required(),
+        RD_PORT: Joi.number().required(),
+        RD_PASSWORD: Joi.string().required(),
         HASH_ROUNDS: Joi.number().required(),
         ACCESS_TOKEN_SECRET: Joi.string().required(),
         REFRESH_TOKEN_SECRET: Joi.string().required(),
@@ -55,13 +62,23 @@ import * as winston from 'winston';
     // config module가 생성후 값을 주입받아야해서 async로 실행
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
+        url: configService.get<string>(envVariablesKeys.dbUrl),
         type: configService.get<string>(envVariablesKeys.dbType) as 'postgres',
-        host: configService.get<string>(envVariablesKeys.dbHost),
-        port: configService.get<number>(envVariablesKeys.dbPort),
-        username: configService.get<string>(envVariablesKeys.dbUsername),
-        password: configService.get<string>(envVariablesKeys.dbPassword),
-        database: configService.get<string>(envVariablesKeys.dbDatabase),
-        entities: [Movie, MovieDetail, Director, Genre, User, MovieUserLike],
+        // host: configService.get<string>(envVariablesKeys.dbHost),
+        // port: configService.get<number>(envVariablesKeys.dbPort),
+        // username: configService.get<string>(envVariablesKeys.dbUsername),
+        // password: configService.get<string>(envVariablesKeys.dbPassword),
+        // database: configService.get<string>(envVariablesKeys.dbDatabase),
+        entities: [
+          Movie,
+          MovieDetail,
+          Director,
+          Genre,
+          User,
+          MovieUserLike,
+          Chat,
+          ChatRoom,
+        ],
         synchronize: true, // 자동으로 켜질때마다 db와 동기화
       }),
       inject: [ConfigService],
@@ -110,6 +127,11 @@ import * as winston from 'winston';
     GenreModule,
     AuthModule,
     UserModule,
+    ChatModule,
+    ConditionalModule.registerWhen(
+      WorkerModule,
+      (env: NodeJS.ProcessEnv) => env['TYPE'] === 'worker',
+    ),
   ],
   controllers: [],
   providers: [

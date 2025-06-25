@@ -9,6 +9,10 @@ import { TasksService } from './tasks.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Movie } from 'src/movie/entity/movie.entity';
 import { DefaultLogger } from './logger/default.logger';
+import { BullModule } from '@nestjs/bullmq';
+import { envVariablesKeys } from './const/env.const';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from './prisma.service';
 
 @Module({
   imports: [
@@ -29,9 +33,23 @@ import { DefaultLogger } from './logger/default.logger';
       }),
     }),
     TypeOrmModule.forFeature([Movie]),
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>(envVariablesKeys.rdHost),
+          port: configService.get<number>(envVariablesKeys.rdPort),
+          username: configService.get<string>(envVariablesKeys.rdUsername),
+          password: configService.get<string>(envVariablesKeys.rdPassword),
+        },
+      }),
+    }),
+    BullModule.registerQueue({
+      name: 'thumbnail-generation',
+    }),
   ],
   controllers: [CommonController],
-  providers: [CommonService, TasksService, DefaultLogger],
-  exports: [CommonService],
+  providers: [CommonService, TasksService, DefaultLogger, PrismaService],
+  exports: [CommonService, PrismaService],
 })
 export class CommonModule {}
