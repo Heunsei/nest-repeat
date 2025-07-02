@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Role, User } from 'src/user/entity/user.entity';
+// import { Role, User } from 'src/user/entity/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -14,16 +14,19 @@ import { envVariablesKeys } from 'src/common/const/env.const';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UserService } from 'src/user/user.service';
+import { PrismaClient, Role } from '@prisma/client';
+import { PrismaService } from 'src/common/prisma.service';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    // @InjectRepository(User)
+    // private readonly userRepository: Repository<User>,
     private readonly userService: UserService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     @Inject(CACHE_MANAGER)
     private readonly cacheService: Cache,
+    private readonly prisma: PrismaService,
   ) {}
 
   // Basic 토큰은 id:password 형태로 인코딩된 토큰을 받아
@@ -97,7 +100,10 @@ export class AuthService {
   }
 
   async authenticate(email: string, password: string) {
-    const user = await this.userRepository.findOne({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    // const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
       throw new BadRequestException('존재하지 않는 유저입니다.');
